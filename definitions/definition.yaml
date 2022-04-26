@@ -1,9 +1,9 @@
 apiVersion: apiextensions.crossplane.io/v1
 kind: CompositeResourceDefinition
 metadata:
-  name: compositepostgresqlinstances.database.example.org
+  name: compositepostgresqlinstances.database.helecloud.com
 spec:
-  group: database.example.org
+  group: database.helecloud.com
   names:
     kind: CompositePostgreSQLInstance
     plural: compositepostgresqlinstances

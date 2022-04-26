@@ -1,12 +1,12 @@
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
-  name: compositepostgresqlinstances.aws.database.example.org
+  name: compositepostgresqlinstances.aws.database.helecloud.com
   labels:
     provider: aws-provider
 spec:
   compositeTypeRef:
-    apiVersion: database.example.org/v1alpha1
+    apiVersion: database.helecloud.com/v1alpha1
     kind: CompositePostgreSQLInstance
   patchSets:
     - name: metadata
