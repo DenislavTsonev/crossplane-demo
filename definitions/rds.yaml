@@ -1,0 +1,139 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: compositepostgresqlinstances.aws.database.example.org
+  labels:
+    provider: aws-provider
+spec:
+  compositeTypeRef:
+    apiVersion: database.example.org/v1alpha1
+    kind: CompositePostgreSQLInstance
+  patchSets:
+    - name: metadata
+      patches:
+        - fromFieldPath: metadata.labels
+  resources:
+    - name: securitygroup
+      base:
+        apiVersion: ec2.aws.crossplane.io/v1beta1
+        kind: SecurityGroup
+        spec:
+          providerConfigRef:
+            name: aws-provider
+          forProvider:
+            region: eu-west-1
+            vpcIdRef:
+              name: example-vpc
+            groupName: default
+            description: default
+            ingress:
+              - fromPort: 5432
+                toPort: 5432
+                ipProtocol: tcp
+                ipRanges:
+                  - cidrIp: 10.0.0.0/16
+      patches:
+        - fromFieldPath: "metadata.name"
+          toFieldPath: "spec.forProvider.groupName"
+        - fromFieldPath: "spec.parameters.vpcId"
+          toFieldPath: "spec.forProvider.vpcId"
+      readinessChecks:
+        - type: MatchString
+          fieldPath: status.atProvider.status
+          matchString: ACTIVE
+
+    - name: rdsinstance
+      base:
+        apiVersion: database.aws.crossplane.io/v1beta1
+        kind: RDSInstance
+        spec:
+          providerConfigRef:
+            name: aws-provider
+          forProvider:
+            dbSubnetGroupNameSelector:
+              matchLabels:
+                group: dbsubnetgroup
+            region: eu-west-1
+            vpcSecurityGroupIDSelector:
+              matchControllerRef: true
+            allocatedStorage: 20
+            autoMinorVersionUpgrade: true
+            backupRetentionPeriod: 0
+            caCertificateIdentifier: rds-ca-2019
+            copyTagsToSnapshot: false
+            dbInstanceClass: db.t4g.micro
+            deletionProtection: true
+            enableIAMDatabaseAuthentication: false
+            enablePerformanceInsights: false
+            engine: postgres
+            engineVersion: "14"
+            finalDBSnapshotIdentifier: final-snapshot
+            masterUsername: root
+            multiAZ: false
+            port: 5432
+            preferredBackupWindow: 06:15-06:45
+            preferredMaintenanceWindow: sat:09:11-sat:09:51
+            publiclyAccessible: false
+            storageEncrypted: true
+            storageType: gp2
+          writeConnectionSecretToRef:
+            namespace: crossplane
+            name: default
+      patches:
+        - fromFieldPath: "metadata.name"
+          toFieldPath: "spec.forProvider.finalDBSnapshotIdentifier"
+          transforms:
+            - type: string
+              string:
+                fmt: "%s-final-snapshot"
+        - fromFieldPath: "spec.parameters.storageGB"
+          toFieldPath: "spec.forProvider.allocatedStorage"
+        - fromFieldPath: "spec.parameters.deletionProtection"
+          toFieldPath: "spec.forProvider.deletionProtection"
+        - fromFieldPath: "spec.parameters.finalDBSnapshot"
+          toFieldPath: "spec.forProvider.finalDBSnapshotIdentifier"
+        - fromFieldPath: "spec.parameters.dbInstance"
+          toFieldPath: "spec.forProvider.dbInstanceClass"
+          transforms:
+            - type: map
+              map:
+                small: db.t4g.small
+                medium: db.t4g.medium
+                large: db.t4g.large
+        - fromFieldPath: "metadata.namespace"
+          toFieldPath: "spec.writeConnectionSecretToRef.namespace"
+        - fromFieldPath: "metadata.name"
+          toFieldPath: "spec.writeConnectionSecretToRef.name"
+      readinessChecks:
+        - type: MatchString
+          fieldPath: status.atProvider.status
+          matchString: ACTIVE
+      connectionDetails:
+        - fromConnectionSecretKey: username
+        - fromConnectionSecretKey: password
+        - fromConnectionSecretKey: endpoint
+        - fromConnectionSecretKey: port
+
+    - name: dbsubnetgroup
+      base:
+        apiVersion: database.aws.crossplane.io/v1beta1
+        kind: DBSubnetGroup
+        metadata:
+          labels:
+            group: dbsubnetgroup
+        spec:
+          providerConfigRef:
+            name: aws-provider
+          forProvider:
+            region: eu-west-1
+            description: "SWOCBE - DB Subnet Group"
+            subnetIds:
+              - subnet-00cfa2d459a07bfc1
+              - subnet-0f8320e595416a6d4
+      patches:
+        - fromFieldPath: "spec.parameters.subnetIds"
+          toFieldPath: "spec.forProvider.subnetIds"
+      readinessChecks:
+        - type: MatchString
+          fieldPath: status.atProvider.status
+          matchString: ACTIVE

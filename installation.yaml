@@ -1,0 +1,16 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: rds-postgres
+  annotations:
+    provider: aws
+spec:
+  ignoreCrossplaneConstraints: false
+  package: guevara/crossplane-demo:0.0.1
+  packagePullPolicy: Always
+  revisionActivationPolicy: Automatic
+  revisionHistoryLimit: 1
+  skipDependencyResolution: false
+  ## The secret shoould be type=kubernetes.io/dockerconfigjson
+  #packagePullSecrets: 
+  #- name: docker-secret

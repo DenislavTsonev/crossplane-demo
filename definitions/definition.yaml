@@ -1,0 +1,44 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: compositepostgresqlinstances.database.example.org
+spec:
+  group: database.example.org
+  names:
+    kind: CompositePostgreSQLInstance
+    plural: compositepostgresqlinstances
+  claimNames:
+    kind: RDSPostgresInstance
+    plural: rdspostgresqlinstances
+  connectionSecretKeys:
+    - username
+    - password
+    - endpoint
+    - port
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  properties:
+                    storageGB:
+                      type: integer
+                    finalDBSnapshot:
+                      type: string
+                    dbInstance:
+                      type: string
+                    deletionProtection:
+                      type: boolean
+                  required:
+                    - storageGB
+                    - dbInstance
+              required:
+                - parameters
